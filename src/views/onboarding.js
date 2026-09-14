@@ -1,446 +1,288 @@
 // ========================================
-// Onboarding & Welcome View
+// Onboarding / AI Copilot View (Production)
 // ========================================
 
-import { renderHeader } from '../components/header.js';
 import { showToast } from '../components/toast.js';
-import { merchantProfile, onboardingData } from '../data/merchant.js';
+import { store } from '../store/appState.js';
 import { navigate } from '../router.js';
 
 export function renderOnboarding() {
-  const d = onboardingData;
-
-  // Build language pills HTML
-  const langPillsHtml = d.languages.map(lang => {
-    const isActive = lang.active;
-    const baseClasses = 'lang-pill flex items-center gap-1.5 px-3.5 py-2 rounded-full font-label text-label-md transition-all whitespace-nowrap';
-    const activeClasses = isActive
-      ? 'bg-primary-container text-on-primary shadow-sm'
-      : 'bg-surface-container text-on-surface';
-
-    const checkHtml = isActive
-      ? `<span class="material-symbols-outlined text-[16px] text-secondary-container">check</span>`
-      : '';
-
-    const waveHtml = isActive
-      ? `<span class="flex items-center gap-0.5 ml-1">
-           <span class="w-0.5 h-2.5 bg-secondary-container rounded-full animate-pulse"></span>
-           <span class="w-0.5 h-3.5 bg-secondary-container rounded-full animate-pulse" style="animation-delay: 75ms;"></span>
-           <span class="w-0.5 h-2 bg-secondary-container rounded-full animate-pulse" style="animation-delay: 150ms;"></span>
-         </span>`
-      : '';
-
-    return `<button class="${baseClasses} ${activeClasses}" data-lang="${lang.code}" type="button">
-      ${checkHtml}
-      <span>${lang.label}</span>
-      ${waveHtml}
-    </button>`;
-  }).join('');
-
-  // Build superpowers cards HTML
-  const superpowerCardsHtml = d.superpowers.map(sp => {
-    const subtitleColorClass = sp.subtitleColor || 'text-secondary';
-
-    // Determine tip area styling
-    const tipBg = sp.tipBg || 'bg-surface-container-low';
-    const tipLayout = sp.tipStatus
-      ? `<div class="mt-3.5 pt-3 flex items-center justify-between ${tipBg} p-2.5 rounded-lg">
-          <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px] text-secondary-container">${sp.tipIcon}</span>
-            <span class="font-body text-body-sm text-on-surface">${sp.tipText}</span>
-          </div>
-          <span class="font-label text-label-sm text-success-green font-bold">${sp.tipStatus}</span>
-        </div>`
-      : `<div class="mt-3.5 flex items-center gap-2 p-2.5 rounded-lg ${tipBg} text-on-surface">
-          <div class="w-6 h-6 rounded-full bg-whatsapp-green text-on-primary flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined text-[14px]">${sp.tipIcon}</span>
-          </div>
-          <span class="font-body text-body-sm text-on-surface font-medium truncate">${sp.tipText}</span>
-        </div>`;
-
-    return `
-      <div class="relative overflow-hidden p-4 rounded-xl bg-surface-container-lowest shadow-md animate-fade-in">
-        <div class="absolute left-0 top-0 bottom-0 w-1.5 ${sp.accentColor}"></div>
-        <div class="flex items-start justify-between gap-2">
-          <div class="flex items-center gap-2.5">
-            <div class="w-10 h-10 rounded-xl ${sp.iconBg} flex items-center justify-center ${sp.iconColor}">
-              <span class="material-symbols-outlined text-[24px]">${sp.icon}</span>
-            </div>
-            <div>
-              <h3 class="font-headline text-headline-sm text-primary">${sp.titleHi}</h3>
-              <p class="font-label text-label-sm ${subtitleColorClass} uppercase font-bold">${sp.subtitleEn}</p>
-            </div>
-          </div>
-          <span class="px-2 py-0.5 rounded-full ${sp.badgeBg} ${sp.badgeColor} font-label text-label-sm font-bold flex-shrink-0">
-            ${sp.badgeText}
-          </span>
-        </div>
-        <p class="mt-3 font-body text-body-md text-on-surface-variant leading-relaxed">${sp.description}</p>
-        ${tipLayout}
-      </div>`;
-  }).join('');
-
-  // Build setup checklist HTML
-  const checklistHtml = d.setupChecklist.map((item, index) => {
-    const divider = index < d.setupChecklist.length - 1
-      ? `<div class="h-[1px] bg-surface-container"></div>`
-      : '';
-
-    if (item.complete) {
-      return `
-        <div class="flex items-start justify-between gap-3">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-full bg-whatsapp-green-tint text-success-green flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check</span>
-            </div>
-            <div>
-              <p class="font-label text-label-lg text-primary">${item.title}</p>
-              <p class="font-body text-body-sm text-outline">${item.subtitle}</p>
-            </div>
-          </div>
-          <span class="px-2 py-0.5 rounded bg-whatsapp-green-tint text-success-green font-label text-label-sm font-bold flex-shrink-0">
-            ${item.statusText}
-          </span>
-        </div>
-        ${divider}`;
-    }
-
-    return `
-      <div class="flex items-start justify-between gap-3">
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary flex-shrink-0 mt-0.5">
-            <span class="material-symbols-outlined text-[18px]">${item.icon}</span>
-          </div>
-          <div>
-            <p class="font-label text-label-lg text-primary">${item.title}</p>
-            <p class="font-body text-body-sm text-on-surface-variant">${item.subtitle}</p>
-          </div>
-        </div>
-        <button aria-checked="true" class="toggle-switch w-12 h-6 rounded-full bg-whatsapp-green p-0.5 transition-colors relative flex items-center flex-shrink-0" id="${item.toggleId}" role="switch" type="button">
-          <span class="w-5 h-5 rounded-full bg-white shadow-sm transform translate-x-6 transition-transform block"></span>
-        </button>
-      </div>
-      ${divider}`;
-  }).join('');
-
-  // Build trust badges HTML
-  const trustBadgesHtml = d.trustBadges.map(badge => `
-    <span class="inline-flex items-center gap-1 text-[11px] font-label font-semibold bg-surface-container-lowest px-2.5 py-1 rounded-full text-primary">
-      <span class="material-symbols-outlined text-[13px] ${badge.color}">${badge.icon}</span>
-      ${badge.label}
-    </span>
-  `).join('');
+  const merchant = store.get('merchant');
+  const settings = store.get('settings');
 
   const html = `
-    ${renderHeader('dark', 'Loans')}
-    <main class="flex flex-col relative w-full pt-20 pb-safe bg-paytm-surface min-h-screen">
+    <main class="flex flex-col relative w-full min-h-screen bg-gradient-to-b from-[#002970] via-[#003d99] to-paytm-surface">
       <div class="flex flex-col w-full pb-24">
 
-        <!-- TOP WELCOME BANNER & MERCHANT RECOGNITION -->
-        <section class="px-margin-mobile pt-space-md space-y-4 animate-fade-in">
-          <!-- Pragati Innovation Pill -->
-          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container shadow-sm">
-            <div class="w-5 h-5 rounded-full bg-primary-container flex items-center justify-center text-secondary-container">
-              <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
-            </div>
-            <span class="font-label text-label-md text-primary-container tracking-wide">पेटीएम प्रगति • Paytm Pragati AI</span>
-            <span class="px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label text-label-sm uppercase">2.0</span>
+        <!-- Hero -->
+        <section class="px-margin-mobile pt-safe pt-12 pb-6 text-center relative">
+          <div class="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-secondary-container/8 blur-3xl pointer-events-none"></div>
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shadow-lg border border-white/10">
+            <span class="material-symbols-outlined text-white text-[36px]">smart_toy</span>
           </div>
+          <h1 class="font-headline text-headline-lg text-white leading-snug tracking-tight">
+            Welcome to Paytm Pragati
+          </h1>
+          <p class="font-body text-body-md text-blue-200/80 mt-2 max-w-xs mx-auto">
+            आपका AI व्यापार सहायक — Your AI Business Growth Copilot
+          </p>
+        </section>
 
-          <!-- Personalized Greeting -->
-          <div class="space-y-1.5">
-            <h1 class="font-headline text-headline-lg-mobile text-primary tracking-tight">${d.greeting}</h1>
-            <p class="font-body text-body-md text-on-surface-variant leading-relaxed">${d.subtitle}</p>
-          </div>
-
-          <!-- Merchant Store Status Tag -->
-          <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low shadow-sm">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary-container flex-shrink-0">
-                <span class="material-symbols-outlined text-[20px]">storefront</span>
-              </div>
-              <div class="min-w-0">
-                <p class="font-label text-label-md text-primary truncate">शर्मा किराना स्टोर (Sharma Kirana)</p>
-                <p class="font-body text-body-sm text-outline flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[13px] text-success-green">speaker_phone</span>
-                  Soundbox: ${d.soundboxId} • सक्रिय (Active)
-                </p>
-              </div>
+        <!-- Language Selection -->
+        <section class="px-margin-mobile mb-space-md">
+          <div class="rounded-xl bg-white/10 backdrop-blur-md p-space-md border border-white/10">
+            <h2 class="font-headline text-headline-sm text-white mb-space-sm flex items-center gap-2">
+              <span class="material-symbols-outlined text-[20px] text-[#2bc6ff]">translate</span>
+              Choose Language / भाषा चुनें
+            </h2>
+            <div class="grid grid-cols-2 gap-2" id="language-selector">
+              <button class="lang-btn p-3 rounded-xl text-center transition-all ${settings.language === 'hi' ? 'bg-white text-primary shadow-md' : 'bg-white/8 text-white/80 border border-white/10 hover:bg-white/15'}" data-lang="hi">
+                <span class="text-2xl block mb-1">🇮🇳</span>
+                <span class="font-label text-label-lg font-bold block">हिंदी</span>
+                <span class="text-[11px] opacity-70">Hindi</span>
+              </button>
+              <button class="lang-btn p-3 rounded-xl text-center transition-all ${settings.language === 'en' ? 'bg-white text-primary shadow-md' : 'bg-white/8 text-white/80 border border-white/10 hover:bg-white/15'}" data-lang="en">
+                <span class="text-2xl block mb-1">🌐</span>
+                <span class="font-label text-label-lg font-bold block">English</span>
+                <span class="text-[11px] opacity-70">अंग्रेजी</span>
+              </button>
+              <button class="lang-btn p-3 rounded-xl text-center transition-all ${settings.language === 'hinglish' ? 'bg-white text-primary shadow-md' : 'bg-white/8 text-white/80 border border-white/10 hover:bg-white/15'}" data-lang="hinglish">
+                <span class="text-2xl block mb-1">🤝</span>
+                <span class="font-label text-label-lg font-bold block">Hinglish</span>
+                <span class="text-[11px] opacity-70">हिंग्लिश Mix</span>
+              </button>
+              <button class="lang-btn p-3 rounded-xl text-center transition-all ${settings.language === 'bn' ? 'bg-white text-primary shadow-md' : 'bg-white/8 text-white/80 border border-white/10 hover:bg-white/15'}" data-lang="bn">
+                <span class="text-2xl block mb-1">🇧🇩</span>
+                <span class="font-label text-label-lg font-bold block">বাংলা</span>
+                <span class="text-[11px] opacity-70">Bengali</span>
+              </button>
             </div>
-            <span class="material-symbols-outlined text-success-green text-[22px] flex-shrink-0" style="font-variation-settings: 'FILL' 1;">check_circle</span>
           </div>
         </section>
 
-        <!-- VERNACULAR & AUDIO SELECTOR -->
-        <section class="mt-6 px-margin-mobile space-y-3 animate-fade-in stagger-1">
-          <div class="flex items-center justify-between">
-            <label class="font-label text-label-md text-primary flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-[18px] text-secondary">translate</span>
-              अपनी भाषा व आवाज़ चुनें (Preferred Voice)
-            </label>
-            <span class="font-label text-label-sm text-outline">बोलकर मदद</span>
-          </div>
-
-          <!-- Horizontal Language Chips -->
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar" id="lang-chips">
-            ${langPillsHtml}
-          </div>
-
-          <!-- 30s Audio Explainer -->
-          <button class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-surface-container-high text-primary-container shadow-sm active:scale-[0.99] transition-transform" id="audio-preview-btn" type="button">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-[18px]" id="speaker-icon">volume_up</span>
-              </div>
-              <div class="text-left">
-                <p class="font-label text-label-md text-primary">${d.audioExplainer.titleHi}</p>
-                <p class="font-body text-body-sm text-on-surface-variant">${d.audioExplainer.subtitleEn}</p>
+        <!-- Audio Explainer -->
+        <section class="px-margin-mobile mb-space-md">
+          <div class="rounded-xl bg-white shadow-lg p-space-md">
+            <div class="flex items-center gap-3 mb-space-sm">
+              <button class="w-12 h-12 rounded-full bg-primary flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform shadow-lg" id="audio-explainer-btn">
+                <span class="material-symbols-outlined text-white text-[26px]" id="audio-play-icon">play_arrow</span>
+              </button>
+              <div>
+                <span class="font-label text-label-md text-primary font-bold">2-Minute Audio Explainer</span>
+                <span class="font-body text-body-sm text-on-surface-variant block">सुनें कैसे Pragati आपके व्यापार को बदलेगा</span>
               </div>
             </div>
-            <div class="flex items-center gap-1 bg-surface-container-lowest px-2 py-1 rounded-md">
-              <span class="material-symbols-outlined text-[14px] text-secondary-container" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
-              <span class="font-label text-label-sm text-primary-container font-bold" id="audio-time">${d.audioExplainer.duration}</span>
+            <div class="bg-surface-container-low rounded-lg h-2 overflow-hidden">
+              <div class="bg-primary h-full rounded-lg" style="width: 0%;" id="audio-progress"></div>
             </div>
-          </button>
-        </section>
-
-        <!-- 3 CORE SUPERPOWERS CAROUSEL / STACK -->
-        <section class="mt-6 px-margin-mobile space-y-3.5 animate-fade-in stagger-2">
-          <div class="flex items-center justify-between">
-            <h2 class="font-headline text-headline-sm text-primary">प्रगति की 3 मुख्य शक्तियां (Key Powers)</h2>
-            <span class="font-label text-label-sm text-secondary font-bold">100% AUTOMATED</span>
-          </div>
-          ${superpowerCardsHtml}
-        </section>
-
-        <!-- QUICK 3-STEP INTEGRATION CHECKLIST -->
-        <section class="mt-6 px-margin-mobile space-y-3 animate-fade-in stagger-3">
-          <div class="flex items-center justify-between">
-            <h2 class="font-headline text-headline-sm text-primary">त्वरित सेटअप (Quick Permissions)</h2>
-            <span class="font-label text-label-sm text-outline" id="setup-progress">3 में से 1 पूरा</span>
-          </div>
-          <div class="rounded-xl bg-surface-container-lowest p-4 shadow-sm space-y-4">
-            ${checklistHtml}
           </div>
         </section>
 
-        <!-- BANK-GRADE SECURITY & TRUST BANNER -->
-        <section class="mt-6 px-margin-mobile animate-fade-in stagger-4">
-          <div class="p-4 rounded-xl bg-surface-container-high space-y-2.5">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary-container text-[20px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
-              <p class="font-label text-label-md text-primary-container font-bold">
-                RBI रेगुलेटेड एवं 100% सुरक्षित Paytm ट्रस्ट
-              </p>
+        <!-- Superpowers -->
+        <section class="px-margin-mobile mb-space-md">
+          <h2 class="font-headline text-headline-sm text-white mb-space-sm">Your AI Superpowers ⚡</h2>
+          <div class="space-y-space-sm">
+            <div class="rounded-xl bg-white p-space-sm flex items-start gap-3 shadow-sm animate-fade-in stagger-1 card-hover">
+              <div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-secondary text-[24px]">monitoring</span>
+              </div>
+              <div>
+                <span class="font-label text-label-lg text-primary font-bold block">Real-Time Revenue Dashboard</span>
+                <span class="font-body text-body-sm text-on-surface-variant">Live sales, trend analysis, peak hour detection — all from your Soundbox data</span>
+              </div>
+            </div>
+            <div class="rounded-xl bg-white p-space-sm flex items-start gap-3 shadow-sm animate-fade-in stagger-2 card-hover">
+              <div class="w-10 h-10 rounded-lg bg-whatsapp-green-tint flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-whatsapp-green text-[24px]">chat</span>
+              </div>
+              <div>
+                <span class="font-label text-label-lg text-primary font-bold block">WhatsApp Win-Back Bot</span>
+                <span class="font-body text-body-sm text-on-surface-variant">1-tap campaigns to bring back lapsed customers with AI-generated offers</span>
+              </div>
+            </div>
+            <div class="rounded-xl bg-white p-space-sm flex items-start gap-3 shadow-sm animate-fade-in stagger-3 card-hover">
+              <div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-primary text-[24px]">account_balance</span>
+              </div>
+              <div>
+                <span class="font-label text-label-lg text-primary font-bold block">Instant Business Loan</span>
+                <span class="font-body text-body-sm text-on-surface-variant">Pre-approved micro-loans, auto-deducted daily from QR settlements — zero paperwork</span>
+              </div>
+            </div>
+            <div class="rounded-xl bg-white p-space-sm flex items-start gap-3 shadow-sm animate-fade-in stagger-4 card-hover">
+              <div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-secondary text-[24px]">mic</span>
+              </div>
+              <div>
+                <span class="font-label text-label-lg text-primary font-bold block">Voice-First Interface</span>
+                <span class="font-body text-body-sm text-on-surface-variant">बोलकर पूछें — Ask anything about your business in Hindi</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Setup Checklist -->
+        <section class="px-margin-mobile mb-space-md">
+          <div class="rounded-xl bg-white p-space-md shadow-sm">
+            <h2 class="font-headline text-headline-sm text-primary mb-space-sm">Quick Setup / सेटअप</h2>
+            <div class="space-y-3">
+              <label class="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-surface-container-low transition-colors">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-whatsapp-green text-[20px]">chat</span>
+                  <div>
+                    <span class="font-label text-label-md text-primary block">WhatsApp Bot Activate</span>
+                    <span class="text-[11px] text-on-surface-variant">Enable auto-reply + customer engagement</span>
+                  </div>
+                </div>
+                <button class="relative inline-flex h-6 w-11 rounded-full transition-colors ${settings.whatsappBotEnabled ? 'bg-whatsapp-green' : 'bg-outline-variant'}" id="setup-wa-toggle" role="switch" aria-checked="${settings.whatsappBotEnabled}">
+                  <span class="inline-block h-5 w-5 rounded-full bg-white shadow-md transform transition-transform ${settings.whatsappBotEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'} mt-0.5"></span>
+                </button>
+              </label>
+              <label class="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-surface-container-low transition-colors">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-secondary text-[20px]">graphic_eq</span>
+                  <div>
+                    <span class="font-label text-label-md text-primary block">Daily Audio Summary</span>
+                    <span class="text-[11px] text-on-surface-variant">Morning & evening business report via Soundbox</span>
+                  </div>
+                </div>
+                <button class="relative inline-flex h-6 w-11 rounded-full transition-colors ${settings.dailyAudioEnabled ? 'bg-whatsapp-green' : 'bg-outline-variant'}" id="setup-audio-toggle" role="switch" aria-checked="${settings.dailyAudioEnabled}">
+                  <span class="inline-block h-5 w-5 rounded-full bg-white shadow-md transform transition-transform ${settings.dailyAudioEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'} mt-0.5"></span>
+                </button>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Trust Section -->
+        <section class="px-margin-mobile mb-space-md">
+          <div class="rounded-xl bg-surface-container-low p-4 text-center">
+            <div class="flex items-center justify-center gap-4 mb-2">
+              <span class="inline-flex items-center gap-1 font-label text-label-sm text-on-surface-variant">
+                <span class="material-symbols-outlined text-success-green text-[14px]">shield</span> RBI Regulated
+              </span>
+              <span class="inline-flex items-center gap-1 font-label text-label-sm text-on-surface-variant">
+                <span class="material-symbols-outlined text-success-green text-[14px]">lock</span> 256-bit Encrypted
+              </span>
             </div>
             <p class="font-body text-body-sm text-on-surface-variant">
-              आपका डेटा कभी भी किसी तीसरे पक्ष से साझा नहीं किया जाता। सभी वित्तीय लेनदेन 256-बिट बैंक स्तरीय एन्क्रिप्शन द्वारा सुरक्षित हैं।
+              Trusted by 35M+ merchants. Backed by Paytm & NBFC partners.
             </p>
-            <div class="flex flex-wrap items-center gap-2 pt-1">
-              ${trustBadgesHtml}
-            </div>
           </div>
         </section>
 
-        <!-- BOTTOM ACTIVATION CALL-TO-ACTION -->
-        <section class="mt-6 px-margin-mobile space-y-3 animate-fade-in stagger-5">
-          <button class="w-full min-h-[54px] rounded-xl bg-primary-container text-on-primary font-headline text-headline-sm flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all hover:bg-primary" id="launch-pragati-btn" type="button">
-            <span>प्रगति AI शुरू करें (Launch Pragati)</span>
+        <!-- Launch CTA -->
+        <section class="px-margin-mobile mb-space-lg">
+          <button
+            id="launch-pragati-btn"
+            class="w-full h-14 rounded-xl bg-[#002970] text-white font-headline text-headline-sm flex items-center justify-center gap-2 shadow-xl shadow-primary/30 active:scale-[0.98] transition-all"
+          >
             <span class="material-symbols-outlined text-[22px]">rocket_launch</span>
+            <span>Launch Pragati • शुरू करें</span>
           </button>
-          <div class="text-center space-y-0.5">
-            <p class="font-label text-label-md text-primary">
-              निःशुल्क सेवा • कभी भी बंद या बदल सकते हैं
-            </p>
-            <p class="font-body text-body-sm text-outline">
-              Free forever for active Paytm Merchant partners
-            </p>
-          </div>
+          <p class="text-center font-label text-label-sm text-on-surface-variant mt-3">
+            Already using Pragati? <button class="text-primary font-semibold" id="skip-to-dashboard">Skip to Dashboard →</button>
+          </p>
         </section>
-
-        <!-- SUCCESS TOAST OVERLAY (HIDDEN INITIALLY) -->
-        <div class="hidden fixed bottom-24 left-4 right-4 z-50 p-4 rounded-xl bg-primary text-on-primary shadow-xl flex items-center justify-between animate-bounce-short" id="pragati-toast" style="max-width: 398px; margin: 0 auto;">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-whatsapp-green text-on-primary flex items-center justify-center">
-              <span class="material-symbols-outlined text-[18px]">check</span>
-            </div>
-            <div>
-              <p class="font-label text-label-md font-bold">प्रगति AI सक्रिय हो गया! 🎉</p>
-              <p class="font-body text-body-sm text-primary-fixed">आपका डैशबोर्ड तैयार किया जा रहा है...</p>
-            </div>
-          </div>
-          <span class="material-symbols-outlined text-outline-variant text-[20px] cursor-pointer" id="close-pragati-toast">close</span>
-        </div>
-
       </div>
     </main>
   `;
 
-  // Attach listeners after render
-  setTimeout(() => {
-    initOnboardingListeners();
-  }, 50);
-
+  setTimeout(() => initOnboardingListeners(), 50);
   return html;
 }
 
 function initOnboardingListeners() {
-  // ========================================
-  // Language Pills Micro-interaction
-  // ========================================
-  const langPills = document.querySelectorAll('.lang-pill');
-  langPills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      // Deactivate all pills
-      langPills.forEach(p => {
-        p.classList.remove('bg-primary-container', 'text-on-primary', 'shadow-sm');
-        p.classList.add('bg-surface-container', 'text-on-surface');
-        // Remove checkmark and wave if exists
-        const check = p.querySelector('.material-symbols-outlined');
-        if (check) check.remove();
-        const wave = p.querySelector('.flex.items-center.gap-0\\.5');
-        if (wave) wave.remove();
+  // Language selection
+  const langBtns = document.querySelectorAll('.lang-btn');
+  langBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      langBtns.forEach(b => {
+        b.classList.remove('bg-white', 'text-primary', 'shadow-md');
+        b.classList.add('bg-white/8', 'text-white/80', 'border', 'border-white/10');
       });
+      btn.classList.remove('bg-white/8', 'text-white/80', 'border', 'border-white/10');
+      btn.classList.add('bg-white', 'text-primary', 'shadow-md');
 
-      // Activate clicked pill
-      pill.classList.remove('bg-surface-container', 'text-on-surface');
-      pill.classList.add('bg-primary-container', 'text-on-primary', 'shadow-sm');
-
-      const checkIcon = document.createElement('span');
-      checkIcon.className = 'material-symbols-outlined text-[16px] text-secondary-container';
-      checkIcon.textContent = 'check';
-      pill.prepend(checkIcon);
+      store.update('settings', { language: btn.dataset.lang });
+      showToast(`✅ Language set to ${btn.dataset.lang === 'hi' ? 'हिंदी' : btn.dataset.lang === 'en' ? 'English' : btn.dataset.lang === 'hinglish' ? 'Hinglish' : 'বাংলা'}`);
     });
   });
 
-  // ========================================
-  // Audio Preview Micro-interaction
-  // ========================================
-  const audioBtn = document.getElementById('audio-preview-btn');
-  const speakerIcon = document.getElementById('speaker-icon');
-  const audioTime = document.getElementById('audio-time');
-  let isPlaying = false;
-  let timerInterval = null;
+  // Audio explainer
+  const audioBtn = document.getElementById('audio-explainer-btn');
+  const audioIcon = document.getElementById('audio-play-icon');
+  const audioProgress = document.getElementById('audio-progress');
 
   if (audioBtn) {
     audioBtn.addEventListener('click', () => {
-      isPlaying = !isPlaying;
-      if (isPlaying) {
-        speakerIcon.textContent = 'pause';
-        speakerIcon.classList.add('animate-pulse');
-        let seconds = 32;
-        timerInterval = setInterval(() => {
-          seconds--;
-          if (seconds <= 0) {
-            clearInterval(timerInterval);
-            isPlaying = false;
-            speakerIcon.textContent = 'volume_up';
-            speakerIcon.classList.remove('animate-pulse');
-            audioTime.textContent = '0:32';
-          } else {
-            audioTime.textContent = `0:${seconds < 10 ? '0' : ''}${seconds}`;
-          }
-        }, 1000);
+      if ('speechSynthesis' in window) {
+        const text = 'Namaste! Pragati aapke kirana store ke liye ek AI business copilot hai. Yeh aapke Soundbox data se aapke business ki health track karta hai, WhatsApp pe automatic campaigns chalata hai, aur instant loans provide karta hai. Sab kuch ek jagah, ek tap pe.';
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'hi-IN';
+        utterance.rate = 0.85;
+
+        if (audioIcon) audioIcon.textContent = 'pause';
+        speechSynthesis.speak(utterance);
+
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          progress += 1;
+          if (audioProgress) audioProgress.style.width = progress + '%';
+          if (progress >= 100) clearInterval(progressInterval);
+        }, 150);
+
+        utterance.onend = () => {
+          if (audioIcon) audioIcon.textContent = 'play_arrow';
+          clearInterval(progressInterval);
+          if (audioProgress) audioProgress.style.width = '100%';
+        };
       } else {
-        clearInterval(timerInterval);
-        speakerIcon.textContent = 'volume_up';
-        speakerIcon.classList.remove('animate-pulse');
-        audioTime.textContent = '0:32';
+        showToast('🔊 Audio not supported in this browser');
       }
     });
   }
 
-  // ========================================
-  // Toggle Switches
-  // ========================================
-  function setupToggle(toggleId) {
-    const toggle = document.getElementById(toggleId);
-    if (!toggle) return;
-    toggle.addEventListener('click', () => {
-      const knob = toggle.querySelector('span');
-      const isChecked = toggle.getAttribute('aria-checked') === 'true';
-      if (isChecked) {
-        toggle.setAttribute('aria-checked', 'false');
-        toggle.classList.remove('bg-whatsapp-green');
-        toggle.classList.add('bg-outline-variant');
-        knob.classList.remove('translate-x-6');
-        knob.classList.add('translate-x-0');
-      } else {
-        toggle.setAttribute('aria-checked', 'true');
-        toggle.classList.remove('bg-outline-variant');
-        toggle.classList.add('bg-whatsapp-green');
-        knob.classList.remove('translate-x-0');
-        knob.classList.add('translate-x-6');
-      }
-      updateSetupProgress();
-    });
-  }
-  setupToggle('toggle-wa');
-  setupToggle('toggle-audio');
+  // Setup toggles
+  initSetupToggle('setup-wa-toggle', 'whatsappBotEnabled');
+  initSetupToggle('setup-audio-toggle', 'dailyAudioEnabled');
 
-  // ========================================
-  // Setup Progress Tracker
-  // ========================================
-  function updateSetupProgress() {
-    let completedCount = 1; // Soundbox is always complete
-    const waToggle = document.getElementById('toggle-wa');
-    const audioToggle = document.getElementById('toggle-audio');
-    if (waToggle?.getAttribute('aria-checked') === 'true') completedCount++;
-    if (audioToggle?.getAttribute('aria-checked') === 'true') completedCount++;
-
-    const progressEl = document.getElementById('setup-progress');
-    if (progressEl) {
-      progressEl.textContent = `3 में से ${completedCount} पूरा`;
-    }
-  }
-
-  // Initial update (both toggles default ON = 3/3)
-  updateSetupProgress();
-
-  // ========================================
-  // Launch Pragati CTA
-  // ========================================
+  // Launch Pragati
   const launchBtn = document.getElementById('launch-pragati-btn');
-  const toast = document.getElementById('pragati-toast');
-  const closeToastBtn = document.getElementById('close-pragati-toast');
-
-  if (launchBtn && toast) {
+  if (launchBtn) {
     launchBtn.addEventListener('click', () => {
-      // Show loading state
-      launchBtn.innerHTML = `
-        <span class="material-symbols-outlined animate-spin text-[22px]">progress_activity</span>
-        <span>तैयार हो रहा है...</span>
-      `;
-      launchBtn.classList.add('opacity-90');
-      launchBtn.disabled = true;
-
-      setTimeout(() => {
-        // Show success toast
-        toast.classList.remove('hidden');
-        toast.classList.add('flex');
-
-        // Update button to success state
-        launchBtn.innerHTML = `
-          <span>सफलतापूर्वक चालू! (Active)</span>
-          <span class="material-symbols-outlined text-[22px]">check_circle</span>
-        `;
-        launchBtn.classList.remove('bg-primary-container', 'opacity-90');
-        launchBtn.classList.add('bg-success-green');
-
-        // Auto-navigate to dashboard after delay
-        setTimeout(() => {
-          toast.classList.add('hidden');
-          toast.classList.remove('flex');
-          navigate('/dashboard');
-        }, 2500);
-      }, 1200);
+      launchBtn.innerHTML = '<span class="material-symbols-outlined text-[22px] animate-spin">progress_activity</span> Loading Dashboard...';
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 100]);
+      setTimeout(() => navigate('/dashboard'), 800);
     });
   }
 
-  if (closeToastBtn && toast) {
-    closeToastBtn.addEventListener('click', () => {
-      toast.classList.add('hidden');
-      toast.classList.remove('flex');
-    });
+  // Skip to dashboard
+  const skipBtn = document.getElementById('skip-to-dashboard');
+  if (skipBtn) {
+    skipBtn.addEventListener('click', () => navigate('/dashboard'));
   }
+}
+
+function initSetupToggle(id, settingKey) {
+  const toggle = document.getElementById(id);
+  if (!toggle) return;
+  toggle.addEventListener('click', () => {
+    const checked = toggle.getAttribute('aria-checked') === 'true';
+    const newState = !checked;
+    toggle.setAttribute('aria-checked', String(newState));
+    const dot = toggle.querySelector('span');
+    if (newState) {
+      toggle.classList.remove('bg-outline-variant');
+      toggle.classList.add('bg-whatsapp-green');
+      if (dot) dot.style.transform = 'translateX(22px)';
+    } else {
+      toggle.classList.remove('bg-whatsapp-green');
+      toggle.classList.add('bg-outline-variant');
+      if (dot) dot.style.transform = 'translateX(2px)';
+    }
+    store.update('settings', { [settingKey]: newState });
+    showToast(newState ? '✅ Feature enabled' : '⏹ Feature disabled');
+  });
 }
