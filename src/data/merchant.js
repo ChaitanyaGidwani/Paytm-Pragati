@@ -278,6 +278,115 @@ export const scheduledCampaigns = [
   },
 ];
 
+// ========================================
+// Onboarding & Welcome Data
+// ========================================
+
+export const onboardingData = {
+  greeting: 'नमस्ते राजेश जी! 🙏',
+  subtitle: 'आपके व्यापार का AI साथी — अब दुकान चलाना, उधारी वसूलना और बिक्री बढ़ाना हुआ बेहद आसान!',
+  soundboxId: '#SB-99214',
+  languages: [
+    { code: 'hi', label: 'हिंदी (Hindi)', active: true },
+    { code: 'hinglish', label: 'Hinglish', active: false },
+    { code: 'en', label: 'English', active: false },
+    { code: 'bn', label: 'বাংলা', active: false },
+    { code: 'ta', label: 'தமிழ்', active: false },
+    { code: 'mr', label: 'मराठी', active: false },
+  ],
+  audioExplainer: {
+    titleHi: 'सुनें: प्रगति आपके लिए क्या करेगा?',
+    subtitleEn: 'Listen in 30s audio (हिंदी संदेश)',
+    duration: '0:32',
+    durationSeconds: 32,
+  },
+  superpowers: [
+    {
+      icon: 'smart_toy',
+      titleHi: 'AI व्यापार सारथी',
+      subtitleEn: 'Smart Daily Growth',
+      accentColor: 'bg-secondary-container',
+      iconBg: 'bg-surface-container-high',
+      iconColor: 'text-primary-container',
+      badgeText: '+25% बिक्री वृद्धि',
+      badgeBg: 'bg-surface-container',
+      badgeColor: 'text-primary-container',
+      description: 'आपके QR व Soundbox लेनदेन से सीखकर दोपहर की मंदी में बिक्री बढ़ाने वाले 1-टैप व्यक्तिगत ऑफ़र तैयार करता है।',
+      tipIcon: 'bolt',
+      tipText: 'दोपहर 2–5 बजे: बिस्कुट-चाय कॉम्बो सुझाव',
+      tipStatus: 'स्वतः तैयार',
+    },
+    {
+      icon: 'chat',
+      titleHi: 'व्हाट्सएप कोपायलट',
+      subtitleEn: 'WhatsApp 1-Tap Automation',
+      accentColor: 'bg-whatsapp-green',
+      iconBg: 'bg-whatsapp-green-tint',
+      iconColor: 'text-success-green',
+      subtitleColor: 'text-success-green',
+      badgeText: 'Meta Official API',
+      badgeBg: 'bg-whatsapp-green-tint',
+      badgeColor: 'text-success-green',
+      description: 'उधारी का तकादा (Khata payment links) और पुराने ग्राहकों को दोबारा बुलाने वाले संदेश बिना टाइप किए एक क्लिक में भेजें।',
+      tipIcon: 'call_made',
+      tipText: '₹18,450 की उधारी वसूली में 3 गुना तेजी',
+      tipBg: 'bg-whatsapp-green-tint',
+    },
+    {
+      icon: 'payments',
+      titleHi: 'दैनिक आसान लोन',
+      subtitleEn: 'Cashflow Micro-Loans',
+      accentColor: 'bg-primary-container',
+      iconBg: 'bg-primary-fixed',
+      iconColor: 'text-primary',
+      subtitleColor: 'text-primary-container',
+      badgeText: '0 कागज़ात • तत्काल',
+      badgeBg: 'bg-surface-container',
+      badgeColor: 'text-primary-container',
+      description: 'रोज़ाना Soundbox सेटलमेंट से ₹596 की आसान किश्त। बिना किसी सिबिल व गारंटी के ₹1,50,000 तक का लोन तुरंत बैंक खाते में।',
+      tipIcon: 'verified',
+      tipText: 'पूर्व-स्वीकृत सीमा: ₹1,50,000',
+      tipStatus: '24 घंटे में जमा',
+    },
+  ],
+  setupChecklist: [
+    {
+      id: 'soundbox',
+      icon: 'check',
+      iconFilled: true,
+      title: 'Paytm Soundbox व QR कनेक्टेड',
+      subtitle: '3,420 लेन-देन का डेटा सुरक्षित सिंक हो चुका है',
+      complete: true,
+      statusText: 'सक्रिय',
+    },
+    {
+      id: 'whatsapp',
+      icon: 'phone_iphone',
+      iconFilled: false,
+      title: 'व्हाट्सएप बिजनेस बॉट चालू करें',
+      subtitle: '+91 98765 43210 पर ग्राहक संदेश भेजें',
+      complete: false,
+      toggleId: 'toggle-wa',
+      defaultOn: true,
+    },
+    {
+      id: 'audio',
+      icon: 'record_voice_over',
+      iconFilled: false,
+      title: 'रात 9 बजे दैनिक ऑडियो हिसाब',
+      subtitle: 'दुकान बंद करते वक्त 60 सेकंड में दिनभर की कमाई सुनें',
+      complete: false,
+      toggleId: 'toggle-audio',
+      defaultOn: true,
+    },
+  ],
+  trustBadges: [
+    { icon: 'lock', color: 'text-success-green', label: '256-Bit Bank Grade' },
+    { icon: 'account_balance', color: 'text-secondary-container', label: 'NPCI UPI Partner' },
+    { icon: 'shield', color: 'text-success-green', label: '0 Data Sharing' },
+  ],
+};
+
 // Utility: Calculate loan financials
 export function calculateLoan(amount, tenureDays, monthlyRate = 1.2) {
   const months = tenureDays / 30;
