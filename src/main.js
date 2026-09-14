@@ -10,6 +10,10 @@ import { renderLoanApplication } from './views/loanApplication.js';
 import { renderDisbursal } from './views/disbursal.js';
 import { renderLoanStatement } from './views/loanStatement.js';
 import { renderOnboarding } from './views/onboarding.js';
+import { renderLogin } from './views/login.js';
+import { store, isAuthenticated } from './store/appState.js';
+import { startRealtimeUpdates, stopRealtimeUpdates } from './services/realtimeService.js';
+import { fetchDashboardPulse } from './services/apiService.js';
 
 
 // ========================================
@@ -20,33 +24,69 @@ function initApp() {
   const app = document.getElementById('app');
   if (!app) return;
 
-  // Create app shell with mobile constraint
-  app.innerHTML = `
-    <div class="app-shell bg-paytm-surface">
-      <div id="app-content"></div>
-      ${renderBottomNav()}
-    </div>
-  `;
+  // Register all routes
+  registerRoute('/login', renderLogin, { requiresAuth: false, hideNav: true });
+  registerRoute('/dashboard', renderDashboard, { requiresAuth: true });
+  registerRoute('/', renderDashboard, { requiresAuth: true });
+  registerRoute('/whatsapp', renderWhatsApp, { requiresAuth: true });
+  registerRoute('/loans', renderLoanApplication, { requiresAuth: true });
+  registerRoute('/disbursal', renderDisbursal, { requiresAuth: true });
+  registerRoute('/loan-statement', renderLoanStatement, { requiresAuth: true });
+  registerRoute('/onboarding', renderOnboarding, { requiresAuth: true });
 
-  // Register routes
-  registerRoute('/dashboard', renderDashboard);
-  registerRoute('/', renderDashboard);
-  registerRoute('/whatsapp', renderWhatsApp);
-  registerRoute('/loans', renderLoanApplication);
-  registerRoute('/disbursal', renderDisbursal);
-  registerRoute('/loan-statement', renderLoanStatement);
-  registerRoute('/onboarding', renderOnboarding);
+  // Check auth state
+  if (!isAuthenticated()) {
+    // Show login — no bottom nav
+    app.innerHTML = `
+      <div class="app-shell">
+        <div id="app-content"></div>
+      </div>
+    `;
+    window.location.hash = '#/login';
+  } else {
+    // Authenticated — show full app shell
+    showAuthenticatedShell(app);
+  }
 
   // Initialize router
   initRouter('#app-content');
 
-  // Initialize bottom nav click handlers
-  initBottomNavListeners();
+  // Listen for auth changes to rebuild shell
+  store.subscribe('auth', (auth) => {
+    if (auth.isAuthenticated) {
+      showAuthenticatedShell(app);
+      initRouter('#app-content');
+      initBottomNavListeners();
+      startRealtimeUpdates();
+      fetchDashboardPulse();
+    } else {
+      app.innerHTML = `
+        <div class="app-shell">
+          <div id="app-content"></div>
+        </div>
+      `;
+      stopRealtimeUpdates();
+      window.location.hash = '#/login';
+      initRouter('#app-content');
+    }
+  });
 
-  // Set default hash if none
-  if (!window.location.hash || window.location.hash === '#') {
-    window.location.hash = '#/dashboard';
+  // Start real-time updates if authenticated
+  if (isAuthenticated()) {
+    startRealtimeUpdates();
+    fetchDashboardPulse();
   }
+}
+
+function showAuthenticatedShell(app) {
+  const currentContent = document.getElementById('app-content')?.innerHTML;
+  app.innerHTML = `
+    <div class="app-shell bg-paytm-surface">
+      <div id="app-content">${currentContent || ''}</div>
+      ${renderBottomNav()}
+    </div>
+  `;
+  initBottomNavListeners();
 }
 
 // ========================================
